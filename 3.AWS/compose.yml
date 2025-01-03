@@ -1,0 +1,29 @@
+services:
+
+  gst-examples-js:
+    image: hexaforce/gst-examples-js:1.24.10
+    ports:
+      - 3000:3000
+    depends_on:
+      - gst-examples-signalling
+    restart: no
+
+  gst-examples-signalling:
+    image: hexaforce/gst-examples-signalling:1.24.10
+    ports:
+      - 8443:8443
+    restart: no
+
+  gst-webrtc-api-demo:
+    image: hexaforce/gst-webrtc-api-demo:1.24.10
+    ports:
+      - 13000:3000
+    depends_on:
+      - gst-webrtc-signalling-server
+    restart: no
+
+  gst-webrtc-signalling-server:
+    image: hexaforce/gst-webrtc-signalling-server:1.24.10
+    ports:
+      - 18443:18443
+    restart: no

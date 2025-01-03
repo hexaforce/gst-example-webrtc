@@ -1,0 +1,7 @@
+ColumnLimit: 512
+BreakConstructorInitializers: BeforeComma
+AllowShortFunctionsOnASingleLine: false
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+UseTab: Never
+BasedOnStyle: LLVM
+BreakBeforeBraces: Attach

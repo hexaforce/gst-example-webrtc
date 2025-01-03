@@ -1,5 +1,3 @@
-# docker build . -t hexaforce/gstreamer-builder:1.24.10
-
 FROM rust:bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

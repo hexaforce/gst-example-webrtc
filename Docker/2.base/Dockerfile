@@ -1,5 +1,3 @@
-# docker build . -t hexaforce/gstreamer-base:1.24.10
-
 FROM hexaforce/gstreamer-builder:1.24.10
 
 ARG GST_VERSION=1.24.10

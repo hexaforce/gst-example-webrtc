@@ -1,6 +1,3 @@
-# docker build . -t hexaforce/gst-webrtc-signalling-server:1.24.10
-# docker run -it -p 8443:18443 hexaforce/gst-webrtc-signalling-server:1.24.10
-
 FROM hexaforce/gstreamer:1.24.10 as gstreamer
 
 FROM debian:bookworm-slim

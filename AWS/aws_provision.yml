@@ -27,14 +27,13 @@
 
     - name: Add Docker GPG key
       command: curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-      creates: /usr/share/keyrings/docker-archive-keyring.gpg
 
     - name: Add Docker repository
-      echo: "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian {{ ansible_distribution_release | lower }} stable" 
-      dest: /etc/apt/sources.list.d/docker.list
-      notify:
-        - Update apt cache
-
+      copy:
+        content: "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian {{ ansible_distribution_release | lower }} stable"
+        dest: /etc/apt/sources.list.d/docker.list
+        mode: '0644'
+        
     - name: Update apt cache
       apt:
         update_cache: yes

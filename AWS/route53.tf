@@ -10,7 +10,7 @@ resource "aws_acm_certificate" "hexaforce-io" {
 
 resource "aws_route53_record" "gst-webrtc-api-demo" {
   alias {
-    evaluate_target_health = "true"
+    evaluate_target_health = true
     name                   = aws_lb.gstreamer-loadbalancer.dns_name
     zone_id                = aws_lb.gstreamer-loadbalancer.zone_id
   }
@@ -22,7 +22,7 @@ resource "aws_route53_record" "gst-webrtc-api-demo" {
 
 resource "aws_route53_record" "gst-webrtc-signalling-server" {
   alias {
-    evaluate_target_health = "true"
+    evaluate_target_health = true
     name                   = aws_lb.gstreamer-loadbalancer.dns_name
     zone_id                = aws_lb.gstreamer-loadbalancer.zone_id
   }
@@ -34,7 +34,7 @@ resource "aws_route53_record" "gst-webrtc-signalling-server" {
 
 resource "aws_route53_record" "gst-examples-js" {
   alias {
-    evaluate_target_health = "true"
+    evaluate_target_health = true
     name                   = aws_lb.gstreamer-loadbalancer.dns_name
     zone_id                = aws_lb.gstreamer-loadbalancer.zone_id
   }
@@ -46,7 +46,7 @@ resource "aws_route53_record" "gst-examples-js" {
 
 resource "aws_route53_record" "gst-examples-signalling" {
   alias {
-    evaluate_target_health = "true"
+    evaluate_target_health = true
     name                   = aws_lb.gstreamer-loadbalancer.dns_name
     zone_id                = aws_lb.gstreamer-loadbalancer.zone_id
   }

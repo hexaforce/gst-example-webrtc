@@ -4,6 +4,7 @@
   become: yes
   vars:
     docker_compose_version: "2.32.1"
+    ansible_python_interpreter: /usr/bin/python3.11
     
   tasks:
     - name: Update and upgrade apt packages
@@ -26,7 +27,11 @@
         state: present
 
     - name: Add Docker GPG key
-      command: curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+      shell: |
+        curl -fsSL https://download.docker.com/linux/debian/gpg -o /tmp/docker.gpg
+        gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg /tmp/docker.gpg
+      args:
+        creates: /usr/share/keyrings/docker-archive-keyring.gpg
 
     - name: Add Docker repository
       copy:
@@ -55,7 +60,7 @@
     - name: Add current user to Docker group
       user:
         name: "{{ ansible_user }}"
-        group: docker
+        groups: docker
         append: yes
 
     - name: Ensure Docker Compose is installed
@@ -65,7 +70,11 @@
       args:
         creates: /usr/local/bin/docker-compose
 
+    - name: Copy Docker Compose file to remote server
+      ansible.builtin.copy:
+        src: ./compose.yml
+        dest: /home/admin/compose.yml
+  
     - name: Run Docker Compose
-      command: docker-compose up -d --build
-      args:
-        chdir: "compose.yml"
+      command: docker compose up -d --build
+      chdir: /home/admin/

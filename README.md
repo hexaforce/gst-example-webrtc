@@ -63,3 +63,7 @@ npm i && npm run build
 docker build . -t hexaforce/gst-examples-js:1.24.10
 docker push hexaforce/gst-examples-js:1.24.10
 ```
+
+
+
+ ansible-playbook -i inventory.ini provision.yml

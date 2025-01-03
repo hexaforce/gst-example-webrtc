@@ -77,4 +77,5 @@
   
     - name: Run Docker Compose
       command: docker compose up -d --build
-      chdir: /home/admin/
+      args:
+        chdir: /home/admin/

@@ -22,6 +22,7 @@ https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs/-/tree/gstreamer-1.24.10
 
 コードは読みやすいようにフォーマットをしています。
 公式から取得してフォーマットしただけのピュアコードはFormattedPlainCodeにあります。
+webはvanilajsからreact+viteに書き換えました。
 差分はそれと比べて確認してください。
 
 1.初めにGstreamerをビルドします、依存も含めた問題を回避するために debian12(bookworm)のコンテナイメージを使用して統一しています
@@ -40,8 +41,21 @@ docker build . -t hexaforce/gstreamer:1.24.10
 
 cd Docker/4.gst-webrtc-signalling-server
 docker build . -t hexaforce/gst-webrtc-signalling-server:1.24.10
+docker push hexaforce/gst-webrtc-signalling-server:1.24.10
 
 cd Docker/5.gst-examples-signalling
 docker build . -t hexaforce/gst-examples-signalling:1.24.10
+docker push hexaforce/gst-examples-signalling:1.24.10
 ```
 
+2.次にWebコンテナをビルドします
+
+```bash
+cd Web/gst-examples-js
+docker build . -t hexaforce/gst-examples-js:1.24.10
+docker push hexaforce/gst-examples-js:1.24.10
+
+cd Web/gst-webrtc-api-demo
+docker build . -t hexaforce/gst-webrtc-api-demo:1.24.10
+docker push hexaforce/gst-webrtc-api-demo:1.24.10
+```

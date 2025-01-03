@@ -48,14 +48,21 @@ docker build . -t hexaforce/gst-examples-signalling:1.24.10
 docker push hexaforce/gst-examples-signalling:1.24.10
 ```
 
-2.次にWebコンテナをビルドします
+2.次にWebコンテナをビルドしPushします
 
 ```bash
-cd Web/gst-examples-js
-docker build . -t hexaforce/gst-examples-js:1.24.10
-docker push hexaforce/gst-examples-js:1.24.10
-
-cd Web/gst-webrtc-api-demo
+cd Web/gst-webrtc-api-demo/gstwebrtc-api
+npm i
+npm run build
+cd ..
+npm i
+npm run build
 docker build . -t hexaforce/gst-webrtc-api-demo:1.24.10
 docker push hexaforce/gst-webrtc-api-demo:1.24.10
+
+cd Web/gst-examples-js
+npm i
+npm run build
+docker build . -t hexaforce/gst-examples-js:1.24.10
+docker push hexaforce/gst-examples-js:1.24.10
 ```

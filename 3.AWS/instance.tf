@@ -132,3 +132,8 @@ resource "aws_instance" "gstreamer-demo-instance" {
   tenancy                = "default"
   vpc_security_group_ids = [aws_security_group.gstreamer-sg-instance.id]
 }
+
+output "gstreamer_demo_instance_public_dns" {
+  value = aws_instance.gstreamer-demo-instance.public_dns
+  description = "The public DNS name of the GStreamer demo instance"
+}

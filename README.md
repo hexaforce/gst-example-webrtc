@@ -64,6 +64,22 @@ docker build . -t hexaforce/gst-examples-js:1.24.10
 docker push hexaforce/gst-examples-js:1.24.10
 ```
 
+3.terraformでAWSリソースを構築します
+```bash
+terraform plan -var="domain=hexaforce.io"
+terraform apply -var="domain=hexaforce.io"
+```
+実行が終わったらインスタンスのパブリックDNSが出力されます
+```
+ Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
 
+Outputs:
 
- ansible-playbook -i inventory.ini provision.yml
+gstreamer_demo_instance_public_dns = "ec2-52-195-151-44.ap-northeast-1.compute.amazonaws.com"
+```
+
+出力されたインスタンスのパブリックDNSを設定し、Ansibleでインスタンスにコンテナイメージを起動します
+```bash
+export PUBLIC_DNS=ec2-52-195-151-44.ap-northeast-1.compute.amazonaws.com
+ansible-playbook -i inventory.ini provision.yml
+```

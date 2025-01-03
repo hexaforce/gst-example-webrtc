@@ -1,10 +1,14 @@
+variable "domain" {
+  description = "The domain name for Route53 and ACM"
+  type        = string
+}
 
 data "aws_route53_zone" "hexaforce-io" {
-  name = "hexaforce.io"
+  name = var.domain
 }
 
 resource "aws_acm_certificate" "hexaforce-io" {
-  domain_name       = "*.hexaforce.io"
+  domain_name       = "*.${var.domain}"
   validation_method = "DNS"
 }
 

@@ -24,7 +24,7 @@ export const initialValue = {
 }
 
 const ws_protocol = 'wss'
-const ws_server = 'signalling.hexaforce.io'
+const ws_server = 'gst-examples-signalling.hexaforce.io'
 const ws_port = null
 const use_peer_id = null
 

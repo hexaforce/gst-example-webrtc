@@ -1,0 +1,28 @@
+services:
+  webrtc:
+    image: hexaforce/webrtc
+    ports:
+      - 3000:3000
+    depends_on:
+      - signalling
+    restart: no
+
+  signalling:
+    image: hexaforce/signalling
+    ports:
+      - 8443:8443
+    restart: no
+
+  gst-webrtc-api:
+    image: hexaforce/gst-webrtc-api:1.24.10
+    ports:
+      - 13000:3000
+    depends_on:
+      - gst-webrtc-signalling-server
+    restart: no
+
+  gst-webrtc-signalling-server:
+    image: hexaforce/gst-webrtc-signalling-server:1.24.10
+    ports:
+      - 18443:18443
+    restart: no

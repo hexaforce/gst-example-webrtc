@@ -94,10 +94,10 @@ ansible-playbook -i inventory.ini provision.yml
 ```
 
 # 下記のように構築できれば完了です
-![gstreamer-loadbalancer](gstreamer-loadbalancer.png)
+![gstreamer-loadbalancer](img/gstreamer-loadbalancer.png)
 
 ## https://gst-examples-js.hexaforce.io
-![gst-examples-js](gst-examples-js.png)
+![gst-examples-js](img/gst-examples-js.png)
 
 ## https://gst-webrtc-api-demo.hexaforce.io
-![gst-webrtc-api-demo](gst-webrtc-api-demo.png)
+![gst-webrtc-api-demo](img/gst-webrtc-api-demo.png)

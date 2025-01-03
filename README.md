@@ -1,2 +1,6 @@
 # gst-example-webrtc
-GStreamer WebRTC demos
+
+## 公式のGStreamer WebRTC demosを動かすサンプル
+
+Gstreamerはver1.24.10をつかいます
+

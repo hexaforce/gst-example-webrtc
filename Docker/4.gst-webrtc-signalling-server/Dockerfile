@@ -12,5 +12,4 @@ COPY nginx.conf /etc/nginx/nginx.conf
 COPY --from=gstreamer /usr/bin/gst-webrtc-signalling-server /usr/bin/gst-webrtc-signalling-server
 
 EXPOSE 18443
-
 CMD ["/bin/sh", "-c", "/usr/bin/gst-webrtc-signalling-server & nginx -g 'daemon off;'"]

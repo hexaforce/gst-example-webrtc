@@ -77,6 +77,3 @@ RUN wget https://gstreamer.freedesktop.org/src/gst-python/gst-python-$GST_VERSIO
  && cd gst-python-$GST_VERSION \
  && meson --prefix=/usr build && ninja -C build && ninja -C build -v install \
  && cd / 
-
-# RUN apt autoremove -y
-# RUN rm -rf gst*

@@ -234,6 +234,7 @@ class WebRTCClient:
     def on_negotiation_needed(self, _, create_offer):
         if create_offer:
             print_status('Call was connected: creating offer')
+            self.webrtc.emit('create-data-channel', 'channel', None)
             promise = Gst.Promise.new_with_change_func(self.on_offer_created, None, None)
             self.webrtc.emit('create-offer', None, promise)
 

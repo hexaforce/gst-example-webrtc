@@ -15,4 +15,4 @@ RUN pip3 install pygobject
 WORKDIR /opt/
 COPY . /opt/
 
-# python -u ./webrtc_sendrecv.py --peer-id=4007 --server=wss://gst-examples-signalling.hexaforce.io
+# python -u ./webrtc_sendrecv.py --server=wss://gst-examples-signalling.hexaforce.io --peer-id=541

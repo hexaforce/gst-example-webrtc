@@ -33,7 +33,7 @@ RUN wget https://gstreamer.freedesktop.org/src/gst-plugins-good/gst-plugins-good
 RUN wget https://gstreamer.freedesktop.org/src/gst-plugins-bad/gst-plugins-bad-$GST_VERSION.tar.xz \
  && tar xvfJ gst-plugins-bad-$GST_VERSION.tar.xz > /dev/null \
  && cd gst-plugins-bad-$GST_VERSION \
- && meson --prefix=/usr -Dgpl=enabled build && ninja -C build && ninja -C build -v install \
+ && meson --prefix=/usr -Dgpl=enabled -Dopenssl=enabled -Ddtls=enabled build && ninja -C build && ninja -C build -v install \
  && cd / 
 
 # gst-plugins-ugly

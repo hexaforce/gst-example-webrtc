@@ -132,6 +132,7 @@ ninja-build `# build tools` \
 perl \
 python-gi-dev `# Python GObject introspection` \
 python3-dev `# Python bindings` \
+python3-openssl \
 python3-pip `# Python package manager` \
 qmake6 \
 qt5-qmake \

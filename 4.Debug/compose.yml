@@ -4,3 +4,16 @@ services:
     build: ./sendrecv/gst
     restart: no
     command: tail -f /dev/null
+  sendrecv-gst-java:
+    build: ./sendrecv/gst-java
+    restart: no
+    command: tail -f /dev/null
+  # sendrecv-gst-python:
+  #   build: ./sendrecv/gst-python
+  #   restart: no
+  #   command: tail -f /dev/null
+  # sendrecv-gst-rust:
+  #   build: ./sendrecv/gst-rust
+  #   restart: no
+  #   command: tail -f /dev/null
+

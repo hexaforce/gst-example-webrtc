@@ -1,0 +1,6 @@
+services:
+
+  sendrecv-gst:
+    build: ./sendrecv/gst
+    restart: no
+    command: tail -f /dev/null

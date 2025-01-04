@@ -74,7 +74,7 @@ docker push xxxxxxx/gst-examples-js:1.24.10
 Terraformを使ってインフラを構築します。  
 ドメイン(xxxxxxx.com)はAWSで取得しているものを指定してください。
 ```bash
-cd 3.AWS
+cd 3.AWS/1.terraform
 terraform plan -var="domain=xxxxxxx.com"
 terraform apply -var="domain=xxxxxxx.com"
 ```
@@ -91,7 +91,7 @@ gstreamer_demo_instance_public_ip = "xxx.xxx.xxx.xxx"
 
 出力されたインスタンスのPUBLIC_DNS/IPを設定し、Ansibleを使ってインスタンスにコンテナイメージを起動します。
 ```bash
-cd 3.AWS
+cd 3.AWS/2.ansible
 export PUBLIC_DNS=ec2-xxx.xxx.xxx.xxx.ap-northeast-1.compute.amazonaws.com
 envsubst < inventory.template > inventory.ini
 ansible-playbook -i inventory.ini provision.yml --extra-vars "public_ip=xxx.xxx.xxx.xxx"

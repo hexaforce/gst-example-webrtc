@@ -79,3 +79,21 @@
       command: docker compose up -d --build
       args:
         chdir: /home/admin/
+    
+    - name: Run Coturn container
+      community.docker.docker_container:
+        name: coturn
+        image: coturn/coturn
+        state: started
+        restart_policy: always
+        network_mode: host
+        command: >
+          -n --log-file=stdout
+          --min-port=49160 --max-port=49200
+          --lt-cred-mech --fingerprint
+          --no-multicast-peers --no-cli
+          --no-tlsv1 --no-tlsv1_1
+          --realm=hexaforce.io
+          --external-ip={{ public_ip }}
+          --listening-port=3478
+          --user=branch:z9hG4bK

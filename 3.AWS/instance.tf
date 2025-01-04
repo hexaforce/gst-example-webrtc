@@ -52,6 +52,37 @@ resource "aws_security_group" "gstreamer-sg-instance" {
   vpc_id = aws_vpc.gstreamer-vpc.id
 }
 
+resource "aws_security_group" "turn-sg-instance" {
+  description = "turn instance"
+
+  egress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 0
+    protocol    = -1
+    self        = false
+    to_port     = 0
+  }
+
+  ingress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 3478
+    protocol    = "tcp"
+    self        = false
+    to_port     = 3478
+  }
+
+  ingress {
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 49160
+    protocol    = "udp"
+    self        = false
+    to_port     = 49200
+  }
+
+  name   = "turn-sg-instance"
+  vpc_id = aws_vpc.gstreamer-vpc.id
+}
+
 resource "aws_key_pair" "gstreamer-demo-instance" {
   key_name   = "gstreamer-demo-instance"
   public_key = file("~/.ssh/gstreamer-demo-instance.pub")
@@ -117,7 +148,6 @@ resource "aws_instance" "gstreamer-demo-instance" {
     volume_type           = "gp3"
   }
 
-  # security_groups   = [aws_security_group.gstreamer-sg-instance.id]
   source_dest_check = true
   subnet_id         = aws_subnet.gstreamer-subnet-1c.id
 
@@ -130,10 +160,15 @@ resource "aws_instance" "gstreamer-demo-instance" {
   }
 
   tenancy                = "default"
-  vpc_security_group_ids = [aws_security_group.gstreamer-sg-instance.id]
+  vpc_security_group_ids = [aws_security_group.gstreamer-sg-instance.id, aws_security_group.turn-sg-instance.id]
 }
 
 output "gstreamer_demo_instance_public_dns" {
   value = aws_instance.gstreamer-demo-instance.public_dns
   description = "The public DNS name of the GStreamer demo instance"
+}
+
+output "gstreamer_demo_instance_public_ip" {
+  value = aws_instance.gstreamer-demo-instance.public_ip
+  description = "The public IP name of the GStreamer demo instance"
 }

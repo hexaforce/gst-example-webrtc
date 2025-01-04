@@ -79,20 +79,22 @@ terraform plan -var="domain=xxxxxxx.com"
 terraform apply -var="domain=xxxxxxx.com"
 ```
 
-実行が終わったらインスタンスのパブリックDNSが出力されます。
+実行が終わったらインスタンスのパブリックDNS/IPが出力されます。
 ```
- Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+Apply complete! Resources: 0 added, 4 changed, 0 destroyed.
 
 Outputs:
 
-gstreamer_demo_instance_public_dns = "ec2-xxx.xxx.xxx.xxx.ap-northeast-1.compute.amazonaws.com"
+gstreamer_demo_instance_public_dns = "ec2-xxx-xxx-xxx-xxx.ap-northeast-1.compute.amazonaws.com"
+gstreamer_demo_instance_public_ip = "xxx.xxx.xxx.xxx"
 ```
 
-出力されたインスタンスのPUBLIC_DNSを設定し、Ansibleを使ってインスタンスにコンテナイメージを起動します。
+出力されたインスタンスのPUBLIC_DNS/IPを設定し、Ansibleを使ってインスタンスにコンテナイメージを起動します。
 ```bash
 cd 3.AWS
 export PUBLIC_DNS=ec2-xxx.xxx.xxx.xxx.ap-northeast-1.compute.amazonaws.com
-ansible-playbook -i inventory.ini provision.yml
+envsubst < inventory.template > inventory.ini
+ansible-playbook -i inventory.ini provision.yml --extra-vars "public_ip=xxx.xxx.xxx.xxx"
 ```
 
 インスタンスに接続するには下記にのコマンドを登録しておくと便利です

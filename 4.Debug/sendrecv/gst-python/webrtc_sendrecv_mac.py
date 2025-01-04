@@ -27,9 +27,10 @@ from gi.repository import GstSdp  # NOQA
 # These properties all mirror the ones in webrtc-sendrecv.c, see there for explanations
 WEBRTCBIN = 'webrtcbin name=sendrecv latency=0 \
  stun-server=stun://stun.l.google.com:19302 \
- turn-server=turn://gstreamer:IsGreatWhenYouCanGetItToWork@webrtc.nirbheek.in:3478 \
+ turn-server=turn://branch:z9hG4bK@turn.hexaforce.io:3478 \
  bundle-policy=max-bundle'
 # turn-server=turn://turn:turn.l.google.com:19305?transport=udp'
+# turn-server=turn://gstreamer:IsGreatWhenYouCanGetItToWork@webrtc.nirbheek.in:3478
 
 PIPELINE_DESC_VP8 = WEBRTCBIN + '''
  {vsrc} ! 

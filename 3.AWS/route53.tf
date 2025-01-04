@@ -19,7 +19,7 @@ resource "aws_route53_record" "gst-webrtc-api-demo" {
     zone_id                = aws_lb.gstreamer-loadbalancer.zone_id
   }
 
-  name    = "gst-webrtc-api-demo.hexaforce.io"
+  name    = "gst-webrtc-api-demo.${var.domain}"
   type    = "A"
   zone_id = data.aws_route53_zone.hexaforce-io.zone_id
 }
@@ -31,7 +31,7 @@ resource "aws_route53_record" "gst-webrtc-signalling-server" {
     zone_id                = aws_lb.gstreamer-loadbalancer.zone_id
   }
 
-  name    = "gst-webrtc-signalling-server.hexaforce.io"
+  name    = "gst-webrtc-signalling-server.${var.domain}"
   type    = "A"
   zone_id = data.aws_route53_zone.hexaforce-io.zone_id
 }
@@ -43,7 +43,7 @@ resource "aws_route53_record" "gst-examples-js" {
     zone_id                = aws_lb.gstreamer-loadbalancer.zone_id
   }
 
-  name    = "gst-examples-js.hexaforce.io"
+  name    = "gst-examples-js.${var.domain}"
   type    = "A"
   zone_id = data.aws_route53_zone.hexaforce-io.zone_id
 }
@@ -55,7 +55,16 @@ resource "aws_route53_record" "gst-examples-signalling" {
     zone_id                = aws_lb.gstreamer-loadbalancer.zone_id
   }
 
-  name    = "gst-examples-signalling.hexaforce.io"
+  name    = "gst-examples-signalling.${var.domain}"
   type    = "A"
+  zone_id = data.aws_route53_zone.hexaforce-io.zone_id
+}
+
+resource "aws_route53_record" "turn" {
+  records = [aws_instance.gstreamer-demo-instance.public_ip]
+
+  name    = "turn.${var.domain}"
+  type    = "A"
+  ttl     = 300
   zone_id = data.aws_route53_zone.hexaforce-io.zone_id
 }

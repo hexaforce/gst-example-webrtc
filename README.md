@@ -127,7 +127,7 @@ docker exec -it 4debug-sendrecv-gst-1 ./webrtc-sendrecv --server=wss://gst-examp
 # java 
 docker exec -it 4debug-sendrecv-gst-java-1 java -jar /gst-java.jar --server=wss://gst-examples-signalling.hexaforce.io --peer-id=xxx
 # python
-docker exec -it 4debug-sendrecv-gst-python-1 python -u ./webrtc_sendrecv.py --server=wss://gst-examples-signalling.hexaforce.io --peer-id=xxx
+docker exec -it 4debug-sendrecv-gst-python-1 python -u webrtc_sendrecv.py --server=wss://gst-examples-signalling.hexaforce.io --peer-id=xxx
 ```
 
 ```bash
@@ -135,7 +135,7 @@ docker exec -it 4debug-sendrecv-gst-python-1 python -u ./webrtc_sendrecv.py --se
 cd 4.Debug/sendrecv/gst-python
 brew install gstreamer
 brew install libnice-gstreamer
-python -u webrtc_sendrecv_mac.py --server=wss://gst-examples-signalling.hexaforce.io --peer-id=2343
+python -u webrtc_sendrecv_mac.py --server=wss://gst-examples-signalling.hexaforce.io --peer-id=xxx
 ```
 
 # Support Plugins

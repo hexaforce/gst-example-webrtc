@@ -103,12 +103,12 @@ PIPELINE_DESC = {
 
 VSRC = {
     'test': 'videotestsrc is-live=true pattern=ball',
-    'camera': 'autovideosrc ! video/x-raw,framerate=[25/1,30/1]',
+    'camera': 'avfvideosrc ! video/x-raw,framerate=[25/1,30/1]',
 }
 
 ASRC = {
     'test': 'audiotestsrc is-live=true',
-    'camera': 'autoaudiosrc',
+    'camera': 'osxaudiosrc',
 }
 
 def print_status(msg):
@@ -150,6 +150,7 @@ class WebRTCClient:
     def __init__(self, loop, our_id, peer_id, server, remote_is_offerer, video_encoding, source_type):
         self.conn = None
         self.pipe = None
+        self.desc = None
         self.webrtc = None
         self.event_loop = loop
         self.server = server
@@ -196,6 +197,8 @@ class WebRTCClient:
             if msg.type == Gst.MessageType.ERROR:
                 err = msg.parse_error()
                 print("GST ERROR:", err.gerror, err.debug)
+                print("\nGST PIPELINE:")
+                print(self.desc)
                 remove_bus_poll()
                 break
             elif msg.type == Gst.MessageType.EOS:
@@ -296,8 +299,8 @@ class WebRTCClient:
 
     def start_pipeline(self, create_offer=True, audio_pt=96, video_pt=97):
         print_status(f'Creating pipeline, create_offer: {create_offer}')
-        desc = PIPELINE_DESC[self.video_encoding].format(video_pt=video_pt, audio_pt=audio_pt, vsrc=self.vsrc, asrc=self.asrc)
-        self.pipe = Gst.parse_launch(desc)
+        self.desc = PIPELINE_DESC[self.video_encoding].format(video_pt=video_pt, audio_pt=audio_pt, vsrc=self.vsrc, asrc=self.asrc)
+        self.pipe = Gst.parse_launch(self.desc)
         bus = self.pipe.get_bus()
         self.event_loop.add_reader(bus.get_pollfd().fd, self.on_bus_poll_cb, bus)
         self.webrtc = self.pipe.get_by_name('sendrecv')
@@ -440,7 +443,7 @@ def check_plugin_features(source_type, video_encoding):
 if __name__ == '__main__':
     Gst.init(None)
     parser = argparse.ArgumentParser()
-    parser.add_argument('--video-encoding', default='vp8', nargs='?', choices=['vp8', 'h264', 'av1'],                 help='Video encoding to negotiate')
+    parser.add_argument('--video-encoding', default='av1', nargs='?', choices=['vp8', 'h264', 'av1'],                 help='Video encoding to negotiate')
     parser.add_argument('--camera',         default='test', action='store_const', dest='source_type', const='camera', help='Use an attached camera and mic instead of test sources')
     parser.add_argument('--peer-id',                                                                                  help='String ID of the peer to connect to')
     parser.add_argument('--our-id',                                                                                   help='String ID that the peer can use to connect to us')

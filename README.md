@@ -137,6 +137,7 @@ docker exec -it 4debug-sendrecv-gst-python-1 python -u webrtc_sendrecv.py --serv
 cd 4.Debug/sendrecv/gst-python
 brew install gstreamer
 brew install libnice-gstreamer
+rm -rf  ~/.cache/gstreamer-1.0
 python -u webrtc_sendrecv_mac.py --server=wss://gst-examples-signalling.hexaforce.io --peer-id=xxx
 ```
 

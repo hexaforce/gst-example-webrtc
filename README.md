@@ -130,6 +130,14 @@ docker exec -it 4debug-sendrecv-gst-java-1 java -jar /gst-java.jar --server=wss:
 docker exec -it 4debug-sendrecv-gst-python-1 python -u ./webrtc_sendrecv.py --server=wss://gst-examples-signalling.hexaforce.io --peer-id=xxx
 ```
 
+```bash
+# Mac
+cd 4.Debug/sendrecv/gst-python
+brew install gstreamer
+brew install libnice-gstreamer
+python -u webrtc_sendrecv_mac.py --server=wss://gst-examples-signalling.hexaforce.io --peer-id=2343
+```
+
 # Support Plugins
 
 | **Component**     | **H264**                          | **H265**                          | **VP8**                           | **VP9**                           | **AV1**                            |

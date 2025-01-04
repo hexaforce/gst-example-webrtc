@@ -27,7 +27,8 @@ from gi.repository import GstSdp  # NOQA
 # These properties all mirror the ones in webrtc-sendrecv.c, see there for explanations
 WEBRTCBIN = 'webrtcbin name=sendrecv latency=0 \
  stun-server=stun://stun.l.google.com:19302 \
- turn-server=turn://gstreamer:IsGreatWhenYouCanGetItToWork@webrtc.nirbheek.in:3478'
+ turn-server=turn://gstreamer:IsGreatWhenYouCanGetItToWork@webrtc.nirbheek.in:3478 \
+ bundle-policy=max-bundle'
 # turn-server=turn://turn:turn.l.google.com:19305?transport=udp'
 
 PIPELINE_DESC_VP8 = WEBRTCBIN + '''
@@ -227,6 +228,7 @@ class WebRTCClient:
     def on_negotiation_needed(self, _, create_offer):
         if create_offer:
             print_status('Call was connected: creating offer')
+            self.webrtc.emit('create-data-channel', 'channel', None)
             promise = Gst.Promise.new_with_change_func(self.on_offer_created, None, None)
             self.webrtc.emit('create-offer', None, promise)
 
@@ -240,24 +242,37 @@ class WebRTCClient:
             return
 
         caps = pad.get_current_caps()
-        assert (len(caps))
-        s = caps[0]
+        assert (caps.get_size())
+        s = caps.get_structure(0)
         name = s.get_name()
         if name.startswith('video'):
-            q = Gst.ElementFactory.make('queue')
-            conv = Gst.ElementFactory.make('videoconvert')
-            sink = Gst.ElementFactory.make('autovideosink')
-            self.pipe.add(q, conv, sink)
+            q = Gst.ElementFactory.make('queue', 'video_queue')
+            conv = Gst.ElementFactory.make('videoconvert', 'video_convert')
+            sink = Gst.ElementFactory.make('autovideosink', 'video_sink')
+            if not all([q, conv, sink]):
+                print_error('Failed to create one or more video elements')
+                print(f'q: {q}, conv: {conv}, sink: {sink}')
+                return
+            self.pipe.add(q)
+            self.pipe.add(conv)
+            self.pipe.add(sink)
             self.pipe.sync_children_states()
             pad.link(q.get_static_pad('sink'))
             q.link(conv)
             conv.link(sink)
         elif name.startswith('audio'):
-            q = Gst.ElementFactory.make('queue')
-            conv = Gst.ElementFactory.make('audioconvert')
-            resample = Gst.ElementFactory.make('audioresample')
-            sink = Gst.ElementFactory.make('autoaudiosink')
-            self.pipe.add(q, conv, resample, sink)
+            q = Gst.ElementFactory.make('queue', 'audio_queue')
+            conv = Gst.ElementFactory.make('audioconvert', 'audio_convert')
+            resample = Gst.ElementFactory.make('audioresample', 'audio_resample')
+            sink = Gst.ElementFactory.make('autoaudiosink', 'audio_sink')
+            if not all([q, conv, resample, sink]):
+                print_error('Failed to create one or more audio elements')
+                print(f'q: {q}, conv: {conv}, resample: {resample}, sink: {sink}')
+                return
+            self.pipe.add(q)
+            self.pipe.add(conv)
+            self.pipe.add(resample)
+            self.pipe.add(sink)
             self.pipe.sync_children_states()
             pad.link(q.get_static_pad('sink'))
             q.link(conv)

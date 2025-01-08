@@ -17,10 +17,13 @@ import json
 import argparse
 
 import gi
+
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst  # NOQA
+
 gi.require_version('GstWebRTC', '1.0')
 from gi.repository import GstWebRTC  # NOQA
+
 gi.require_version('GstSdp', '1.0')
 from gi.repository import GstSdp  # NOQA
 
@@ -29,6 +32,7 @@ WEBRTCBIN = 'webrtcbin name=sendrecv latency=0 \
  stun-server=stun://stun.l.google.com:19302 \
  turn-server=turn://branch:z9hG4bK@turn.hexaforce.io:3478 \
  bundle-policy=max-bundle'
+
 # turn-server=turn://turn:turn.l.google.com:19305?transport=udp'
 # turn-server=turn://gstreamer:IsGreatWhenYouCanGetItToWork@webrtc.nirbheek.in:3478
 
@@ -111,6 +115,7 @@ ASRC = {
     'camera': 'osxaudiosrc',
 }
 
+
 def print_status(msg):
     print(f'--- {msg}')
 
@@ -147,6 +152,7 @@ def get_payload_types(sdpmsg, video_encoding, audio_encoding):
 
 
 class WebRTCClient:
+
     def __init__(self, loop, our_id, peer_id, server, remote_is_offerer, video_encoding, source_type):
         self.conn = None
         self.pipe = None
@@ -189,9 +195,11 @@ class WebRTCClient:
         asyncio.run_coroutine_threadsafe(self.send(msg), self.event_loop)
 
     def on_bus_poll_cb(self, bus):
+
         def remove_bus_poll():
             self.event_loop.remove_reader(bus.get_pollfd().fd)
             self.event_loop.stop()
+
         while bus.peek():
             msg = bus.pop()
             if msg.type == Gst.MessageType.ERROR:
@@ -413,8 +421,7 @@ class WebRTCClient:
 
 def check_plugin_features(source_type, video_encoding):
     """ensure we have all the plugins/features we need"""
-    needed = ['opusenc', 'nicesink', 'webrtcbin', 'dtlssrtpenc', 'srtpenc',
-              'rtpbin', 'rtpopuspay']
+    needed = ['opusenc', 'nicesink', 'webrtcbin', 'dtlssrtpenc', 'srtpenc', 'rtpbin', 'rtpopuspay']
 
     if source_type == 'camera':
         needed += ['autoaudiosrc', 'autovideosrc']
@@ -443,12 +450,12 @@ def check_plugin_features(source_type, video_encoding):
 if __name__ == '__main__':
     Gst.init(None)
     parser = argparse.ArgumentParser()
-    parser.add_argument('--video-encoding', default='av1', nargs='?', choices=['vp8', 'h264', 'av1'],                 help='Video encoding to negotiate')
-    parser.add_argument('--camera',         default='test', action='store_const', dest='source_type', const='camera', help='Use an attached camera and mic instead of test sources')
-    parser.add_argument('--peer-id',                                                                                  help='String ID of the peer to connect to')
-    parser.add_argument('--our-id',                                                                                   help='String ID that the peer can use to connect to us')
-    parser.add_argument('--server',         default='wss://webrtc.gstreamer.net:8443',                                help='Signalling server to connect to, eg "wss://127.0.0.1:8443"')
-    parser.add_argument('--remote-offerer', default=False,  action='store_true', dest='remote_is_offerer',            help='Request that the peer generate the offer and we\'ll answer')
+    parser.add_argument('--video-encoding', default='av1', nargs='?', choices=['vp8', 'h264', 'av1'], help='Video encoding to negotiate')
+    parser.add_argument('--camera', default='test', action='store_const', dest='source_type', const='camera', help='Use an attached camera and mic instead of test sources')
+    parser.add_argument('--peer-id', help='String ID of the peer to connect to')
+    parser.add_argument('--our-id', help='String ID that the peer can use to connect to us')
+    parser.add_argument('--server', default='wss://webrtc.gstreamer.net:8443', help='Signalling server to connect to, eg "wss://127.0.0.1:8443"')
+    parser.add_argument('--remote-offerer', default=False, action='store_true', dest='remote_is_offerer', help='Request that the peer generate the offer and we\'ll answer')
     args = parser.parse_args()
     if not check_plugin_features(args.source_type, args.video_encoding):
         sys.exit(1)

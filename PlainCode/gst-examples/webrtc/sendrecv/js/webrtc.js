@@ -153,7 +153,7 @@ function websocketServerConnect() {
         // Retry after 3 seconds
         window.setTimeout(websocketServerConnect, 3000);
     });
-    ws_conn.addEventListener('message', function onServerMessage(event) {
+    ws_conn.addEventListener('message', async function onServerMessage(event) {
         console.log("Received " + event.data);
         switch (event.data) {
             case "HELLO":
@@ -212,25 +212,23 @@ function websocketServerConnect() {
                             return;
                         }
                         isSettingRemoteAnswerPending = msg.sdp.type == "answer";
-                        peer_connection.setRemoteDescription(msg.sdp).then(() => {
-                            setStatus("Remote SDP set");
-                            isSettingRemoteAnswerPending = false;
-                            if (msg.sdp.type == "offer") {
-                                setStatus("Got SDP offer, waiting for getUserMedia to complete");
-                                local_stream.then((stream) => {
-                                    setStatus("getUserMedia to completed, setting local description");
-                                    peer_connection.setLocalDescription().then(() => {
-                                        let desc = peer_connection.localDescription;
-                                        console.log("Got local description: " + JSON.stringify(desc));
-                                        setStatus("Sending SDP " + desc.type);
-                                        ws_conn.send(JSON.stringify({'sdp': desc}));
-                                        if (peer_connection.iceConnectionState == "connected") {
-                                            setStatus("SDP " + desc.type + " sent, ICE connected, all looks OK");
-                                        }
-                                    });
-                                });
+
+                        await peer_connection.setRemoteDescription(msg.sdp)
+                        setStatus("Remote SDP set");
+                        isSettingRemoteAnswerPending = false;
+                        if (msg.sdp.type == "offer") {
+                            setStatus("Got SDP offer, waiting for getUserMedia to complete");
+                            const stream = await local_stream()
+                            setStatus("getUserMedia to completed, setting local description");
+                            await peer_connection.setLocalDescription()
+                            let desc = peer_connection.localDescription;
+                            console.log("Got local description: " + JSON.stringify(desc));
+                            setStatus("Sending SDP " + desc.type);
+                            ws_conn.send(JSON.stringify({'sdp': desc}));
+                            if (peer_connection.iceConnectionState == "connected") {
+                                setStatus("SDP " + desc.type + " sent, ICE connected, all looks OK");
                             }
-                        });
+                        }
                     } catch (err) {
                         handleIncomingError(err);
                     }
@@ -244,17 +242,15 @@ function websocketServerConnect() {
                 }
         }
     });
-    ws_conn.addEventListener('close', function onServerClose(event) {
+    ws_conn.addEventListener('close', async function onServerClose(event) {
         setStatus('Disconnected from server');
-        
-        // resetVideo();
+
         // Release the webcam and mic
         if (local_stream) {
-            local_stream.then(stream => {
-                if (stream) {
-                    stream.getTracks().forEach(function (track) { track.stop(); });
-                }
-            });
+            const stream = await local_stream()
+            if (stream) {
+                stream.getTracks().forEach(function (track) { track.stop(); });
+            }
             local_stream = null;
         }
     
@@ -307,7 +303,7 @@ function onDataChannel(event) {
     receiveChannel.onclose = handleDataChannelClose;
 }
 
-function createCall() {
+async function createCall() {
     callCreateTriggered = true;
     console.log('Configuring RTCPeerConnection');
     send_channel = peer_connection.createDataChannel('label', null);
@@ -380,13 +376,16 @@ function createCall() {
     };
 
     /* Send our video/audio to the other peer */
-    local_stream = getLocalStream().then((stream) => {
+    try {
+        const stream = await getLocalStream()
         console.log('Adding local stream');
         for (const track of stream.getTracks()) {
             peer_connection.addTrack(track, stream);
         }
         return stream;
-    }).catch(setError);
+    } catch(e) {
+        setError(e.message)
+    }
 
     setConnectButtonState("Disconnect");
 }

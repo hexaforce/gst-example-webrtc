@@ -8,3 +8,4 @@ terraform.tfstate.backup
 node_modules/
 dist/
 package-lock.json
+4.Debug/sendrecv/gst-java/

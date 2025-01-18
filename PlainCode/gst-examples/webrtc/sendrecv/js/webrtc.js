@@ -91,27 +91,6 @@ function setError(text) {
     span.classList.add('error');
 }
 
-function getLocalStream() {
-    var constraints;
-    var textarea = document.getElementById('constraints');
-    try {
-        constraints = JSON.parse(textarea.value);
-    } catch (e) {
-        console.error(e);
-        setError('ERROR parsing constraints: ' + e.message + ', using default constraints');
-        constraints = default_constraints;
-    }
-    console.log(JSON.stringify(constraints));
-
-    // Add local stream
-    if (navigator.mediaDevices.getUserMedia) {
-        return navigator.mediaDevices.getUserMedia(constraints);
-    } else {
-        // errorUserMediaHandler();
-        setError("Browser doesn't support getUserMedia!");
-    }
-}
-
 function websocketServerConnect() {
     connect_attempts++;
     if (connect_attempts > 3) {
@@ -376,16 +355,32 @@ async function createCall() {
     };
 
     /* Send our video/audio to the other peer */
-    try {
-        const stream = await getLocalStream()
-        console.log('Adding local stream');
-        for (const track of stream.getTracks()) {
-            peer_connection.addTrack(track, stream);
+    local_stream = async function getLocalStream() {
+        /* Send our video/audio to the other peer */
+        var constraints;
+        var textarea = document.getElementById('constraints');
+        try {
+            constraints = JSON.parse(textarea.value);
+        } catch (e) {
+            console.error(e);
+            setError('ERROR parsing constraints: ' + e.message + ', using default constraints');
+            constraints = default_constraints;
         }
-        return stream;
-    } catch(e) {
-        setError(e.message)
-    }
+        console.log(JSON.stringify(constraints));
+    
+        // Add local stream
+        if (navigator.mediaDevices.getUserMedia) {
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            console.log('Adding local stream');
+            for (const track of stream.getTracks()) {
+                peer_connection.addTrack(track, stream);
+            }
+            return stream;
+        } else {
+            // errorUserMediaHandler();
+            setError("Browser doesn't support getUserMedia!");
+        }
+    };
 
     setConnectButtonState("Disconnect");
 }

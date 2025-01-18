@@ -31,7 +31,7 @@
                 report.remoteCandidate = stats.get(report.remoteCandidateId);
                 report.remoteCandidate.ipVersion = ipv4Regex.test(report.remoteCandidateId.ip) ? "IPv4" : "IPv6";
                 report.localCandidate = stats.get(report.localCandidateId);
-                report.remoteCandidate.ipVersion = ipv4Regex.test(report.remoteCandidateId.ip) ? "IPv4" : "IPv6";
+                report.localCandidate.ipVersion = ipv4Regex.test(report.localCandidate.ip) ? "IPv4" : "IPv6";
                 console.log(`Candidate Pair(${report.localCandidate.ipVersion}):`, report);
               } else {
                 console.log("candidate-pair state:", report.state);

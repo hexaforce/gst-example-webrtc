@@ -8,8 +8,8 @@
  */
 
 // Set this to override the automatic detection in websocketServerConnect()
-var ws_server;
-var ws_port;
+var ws_server = 'webrtc.gstreamer.net';
+var ws_port = 8443;
 // Set this to use a specific peer id instead of a random one
 var default_peer_id;
 // Override with your own STUN servers if you want

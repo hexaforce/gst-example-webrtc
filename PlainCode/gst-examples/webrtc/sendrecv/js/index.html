@@ -19,6 +19,84 @@
     <script src="webrtc.js"></script>
     <script>
       window.onload = websocketServerConnect;
+      const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+      setInterval(() => {
+        const reports = [];
+        peer_connection.getStats(null).then((stats) => {
+          var PeerConnection = null;
+          var DataChannels = [];
+          stats.forEach((report) => {
+            if (report.type === "candidate-pair") {
+              if (report.state === "succeeded") {
+                report.remoteCandidate = stats.get(report.remoteCandidateId);
+                report.remoteCandidate.ipVersion = ipv4Regex.test(report.remoteCandidateId.ip) ? "IPv4" : "IPv6";
+                report.localCandidate = stats.get(report.localCandidateId);
+                report.remoteCandidate.ipVersion = ipv4Regex.test(report.remoteCandidateId.ip) ? "IPv4" : "IPv6";
+                console.log(`Candidate Pair(${report.localCandidate.ipVersion}):`, report);
+              } else {
+                console.log("candidate-pair state:", report.state);
+              }
+            } else if (report.type === "inbound-rtp") {
+              report.codec = stats.get(report.codecId);
+              if (report.playoutId) {
+                report.playout = stats.get(report.playoutId);
+              }
+              if (report.remoteId) {
+                report.remote = stats.get(report.remoteId);
+                report.remote.codec = stats.get(report.remote.codecId);
+              }
+              console.log(`Inbound RTP(${report.kind}):`, report);
+            } else if (report.type === "outbound-rtp") {
+              report.codec = stats.get(report.codecId);
+              report.mediaSource = stats.get(report.mediaSourceId);
+              if (report.remoteId) {
+                report.remote = stats.get(report.remoteId);
+                report.remote.codec = stats.get(report.remote.codecId);
+              }
+              console.log(`Outbound RTP(${report.kind}):`, report);
+            } else if (report.type === "transport") {
+              report.localCertificate = stats.get(report.localCertificateId);
+              report.remoteCertificate = stats.get(report.remoteCertificateId);
+              console.log("Transport:", report);
+            } else if (report.type === "peer-connection") {
+              PeerConnection = report;
+            } else if (report.type === "data-channel") {
+              DataChannels.push(report);
+            } else {
+              if (
+                report.type !== "local-candidate" &&
+                report.type !== "remote-candidate" &&
+                report.type !== "remote-inbound-rtp" &&
+                report.type !== "remote-outbound-rtp" &&
+                report.type !== "media-source" &&
+                report.type !== "media-playout" &&
+                report.type !== "certificate" &&
+                report.type !== "codec"
+              ) {
+                console.log("unknown type:", report.type);
+              }
+            }
+            if (
+              report.type !== "peer-connection" &&
+              report.type !== "data-channel" &&
+              report.type !== "local-candidate" &&
+              report.type !== "remote-candidate" &&
+              report.type !== "remote-inbound-rtp" &&
+              report.type !== "remote-outbound-rtp" &&
+              report.type !== "media-source" &&
+              report.type !== "media-playout" &&
+              report.type !== "certificate" &&
+              report.type !== "codec"
+            ) {
+              reports.push(report);
+            }
+          });
+          PeerConnection.dataChannels = DataChannels;
+          console.log("Peer Connection:", PeerConnection);
+          reports.push(PeerConnection);
+          console.log(JSON.stringify(reports));
+        });
+      }, 10000);
     </script>
   </head>
 

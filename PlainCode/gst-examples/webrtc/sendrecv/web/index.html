@@ -37,7 +37,7 @@
 
       function onConnectClicked() {
         if ($('peer-connect-button').value == 'Disconnect') {
-          resetState()
+          ws_conn.close()
           return
         }
 
@@ -60,14 +60,9 @@
         return true
       }
 
-      function resetState() {
-        // This will call onServerClose()
-        ws_conn.close()
-      }
-
       function handleIncomingError(error) {
         setError('ERROR: ' + error)
-        resetState()
+        ws_conn.close()
       }
 
       function setStatus(text) {

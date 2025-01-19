@@ -81,14 +81,17 @@
 
       window.onload = function websocketServerConnect() {
         connect_attempts++
+
         if (connect_attempts > 3) {
           setError('Too many connection attempts, aborting. Refresh page to try again')
           return
         }
+
         // Clear errors in the status span
         var span = $('status')
         span.classList.remove('error')
         span.textContent = ''
+
         // Populate constraints
         var textarea = $('constraints')
         if (textarea.value == '') textarea.value = JSON.stringify(default_constraints)
@@ -96,6 +99,7 @@
         var peer_id = default_peer_id || Math.floor(Math.random() * (9000 - 10) + 10).toString()
         ws_protocol = ws_protocol || 'ws'
         ws_port = ws_port || '8443'
+
         if (window.location.protocol.startsWith('file')) {
           ws_server = ws_server || '127.0.0.1'
         } else if (window.location.protocol.startsWith('http')) {
@@ -103,9 +107,11 @@
         } else {
           throw new Error("Don't know how to connect to the signalling server with uri" + window.location)
         }
+
         var ws_url = ws_protocol + '://' + ws_server + ':' + ws_port
         setStatus('Connecting to server ' + ws_url)
         ws_conn = new WebSocket(ws_url)
+
         /* When connected, immediately register with the server */
         ws_conn.addEventListener('open', () => {
           $('peer-id').textContent = peer_id
@@ -115,11 +121,13 @@
           // Reset connection attempts because we connected successfully
           connect_attempts = 0
         })
+
         ws_conn.addEventListener('error', function onServerError() {
           setError('Unable to connect to server, did you add an exception for the certificate?')
           // Retry after 3 seconds
           window.setTimeout(websocketServerConnect, 3000)
         })
+
         ws_conn.addEventListener('message', async function onServerMessage(event) {
           console.log('Received ' + event.data)
           switch (event.data) {
@@ -200,6 +208,7 @@
               }
           }
         })
+
         ws_conn.addEventListener('close', async function onServerClose() {
           setStatus('Disconnected from server')
 
@@ -292,6 +301,7 @@
           }
           ws_conn.send(JSON.stringify({ ice: event.candidate }))
         }
+
         peer_connection.oniceconnectionstatechange = () => {
           if (peer_connection.iceConnectionState == 'connected') {
             setStatus('ICE gathering complete')
@@ -319,9 +329,8 @@
         local_stream = async function getLocalStream() {
           /* Send our video/audio to the other peer */
           var constraints
-          var textarea = $('constraints')
           try {
-            constraints = JSON.parse(textarea.value)
+            constraints = JSON.parse($('constraints').value)
           } catch (e) {
             console.error(e)
             setError('ERROR parsing constraints: ' + e.message + ', using default constraints')

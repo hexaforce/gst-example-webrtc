@@ -33,28 +33,22 @@
       var makingOffer = false
       var isSettingRemoteAnswerPending = false
 
-      function setConnectButtonState(value) {
-        document.getElementById('peer-connect-button').value = value
-      }
-
-      function wantRemoteOfferer() {
-        return document.getElementById('remote-offerer').checked
-      }
+      const $ = (id) => document.getElementById(id)
 
       function onConnectClicked() {
-        if (document.getElementById('peer-connect-button').value == 'Disconnect') {
+        if ($('peer-connect-button').value == 'Disconnect') {
           resetState()
           return
         }
 
-        var id = document.getElementById('peer-connect').value
+        var id = $('peer-connect').value
         if (id == '') {
           alert('Peer id must be filled out')
           return
         }
 
         ws_conn.send('SESSION ' + id)
-        setConnectButtonState('Disconnect')
+        $('peer-connect-button').value = 'Disconnect'
       }
 
       function onTextKeyPress(e) {
@@ -64,10 +58,6 @@
           return false
         }
         return true
-      }
-
-      function getOurId() {
-        return Math.floor(Math.random() * (9000 - 10) + 10).toString()
       }
 
       function resetState() {
@@ -82,14 +72,14 @@
 
       function setStatus(text) {
         console.log(text)
-        var span = document.getElementById('status')
+        var span = $('status')
         // Don't set the status if it already contains an error
         if (!span.classList.contains('error')) span.textContent = text
       }
 
       function setError(text) {
         console.error(text)
-        var span = document.getElementById('status')
+        var span = $('status')
         span.textContent = text
         span.classList.add('error')
       }
@@ -101,14 +91,14 @@
           return
         }
         // Clear errors in the status span
-        var span = document.getElementById('status')
+        var span = $('status')
         span.classList.remove('error')
         span.textContent = ''
         // Populate constraints
-        var textarea = document.getElementById('constraints')
+        var textarea = $('constraints')
         if (textarea.value == '') textarea.value = JSON.stringify(default_constraints)
         // Fetch the peer id to use
-        var peer_id = default_peer_id || getOurId()
+        var peer_id = default_peer_id || Math.floor(Math.random() * (9000 - 10) + 10).toString()
         ws_protocol = ws_protocol || 'ws'
         ws_port = ws_port || '8443'
         if (window.location.protocol.startsWith('file')) {
@@ -123,10 +113,10 @@
         ws_conn = new WebSocket(ws_url)
         /* When connected, immediately register with the server */
         ws_conn.addEventListener('open', () => {
-          document.getElementById('peer-id').textContent = peer_id
+          $('peer-id').textContent = peer_id
           ws_conn.send('HELLO ' + peer_id)
           setStatus('Registering with server')
-          setConnectButtonState('Connect')
+          $('peer-connect-button').value = 'Connect'
           // Reset connection attempts because we connected successfully
           connect_attempts = 0
         })
@@ -143,7 +133,7 @@
               return
             case 'SESSION_OK':
               setStatus('Starting negotiation')
-              if (wantRemoteOfferer()) {
+              if ($('remote-offerer').checked) {
                 ws_conn.send('OFFER_REQUEST')
                 setStatus('Sent OFFER_REQUEST, waiting for offer')
                 return
@@ -234,7 +224,7 @@
           }
 
           // Remove all video players
-          document.getElementById('video').innerHTML = ''
+          $('video').innerHTML = ''
 
           if (peer_connection) {
             peer_connection.close()
@@ -257,7 +247,7 @@
         setStatus('Received data channel message')
         if (typeof event.data === 'string' || event.data instanceof String) {
           console.log('Incoming string message: ' + event.data)
-          var textarea = document.getElementById('text')
+          var textarea = $('text')
           textarea.value = textarea.value + '\n' + event.data
         } else {
           console.log('Incoming data message')
@@ -296,7 +286,7 @@
           console.log('ontrack triggered')
 
           // var videoElem = getVideoElement();
-          var div = document.getElementById('video')
+          var div = $('video')
           var videoElem = document.createElement('video')
           videoElem.textContent = "Your browser doesn't support video"
           videoElem.autoplay = true
@@ -338,7 +328,7 @@
         // let the "negotiationneeded" event trigger offer generation
         peer_connection.onnegotiationneeded = async () => {
           setStatus('Negotiation needed')
-          if (wantRemoteOfferer()) return
+          if ($('remote-offerer').checked) return
           try {
             makingOffer = true
             await peer_connection.setLocalDescription()
@@ -356,7 +346,7 @@
         local_stream = async function getLocalStream() {
           /* Send our video/audio to the other peer */
           var constraints
-          var textarea = document.getElementById('constraints')
+          var textarea = $('constraints')
           try {
             constraints = JSON.parse(textarea.value)
           } catch (e) {
@@ -380,7 +370,7 @@
           }
         }
 
-        setConnectButtonState('Disconnect')
+        $('peer-connect-button').value = 'Disconnect'
       }
 
       const getIpVersion = (ip) => (/^(\d{1,3}\.){3}\d{1,3}$/.test(ip) ? 'IPv4' : 'IPv6')

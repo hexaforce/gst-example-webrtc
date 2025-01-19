@@ -27,13 +27,13 @@ class WebRTCSimpleServer(object):
             return http.HTTPStatus.OK, [], b"OK\n"
         return None
 
-    async def recv_msg_ping(self, ws, raddr):
+    async def recv_msg_ping(self, ws, remote_address):
         msg = None
         while msg is None:
             try:
                 msg = await asyncio.wait_for(ws.recv(), self.options.keepalive_timeout)
             except (asyncio.TimeoutError, concurrent.futures._base.TimeoutError):
-                print('Sending keepalive ping to {!r} in recv'.format(raddr))
+                print('Sending keepalive ping to {!r} in recv'.format(remote_address))
                 await ws.ping()
         return msg
 
@@ -55,22 +55,21 @@ class WebRTCSimpleServer(object):
     async def remove_peer(self, uid):
         await self.cleanup_session(uid)
         if uid in self.peers:
-            ws, raddr, status = self.peers[uid]
+            ws, remote_address, status = self.peers[uid]
             del self.peers[uid]
             await ws.close()
-            print("Disconnected from peer {!r} at {!r}".format(uid, raddr))
+            print("Disconnected from peer {!r} at {!r}".format(uid, remote_address))
 
     ############### Handler functions ###############
 
     async def connection_handler(self, ws, uid):
-        raddr = ws.remote_address
         peer_status = None
-        self.peers[uid] = [ws, raddr, peer_status]
-        print("Registered peer {!r} at {!r}".format(uid, raddr))
+        self.peers[uid] = [ws, ws.remote_address, peer_status]
+        print("Registered peer {!r} at {!r}".format(uid, ws.remote_address))
         while True:
 
             # Receive command, wait forever if necessary
-            msg = await self.recv_msg_ping(ws, raddr)
+            msg = await self.recv_msg_ping(ws, ws.remote_address)
 
             # Update current status
             peer_status = self.peers[uid][2]
@@ -105,7 +104,7 @@ class WebRTCSimpleServer(object):
                     continue
                 await ws.send('SESSION_OK')
                 wsc = self.peers[callee_id][0]
-                print('Session from {!r} ({!r}) to {!r} ({!r})'.format(uid, raddr, callee_id, wsc.remote_address))
+                print('Session from {!r} ({!r}) to {!r} ({!r})'.format(uid, ws.remote_address, callee_id, wsc.remote_address))
 
                 # Register session
                 self.peers[uid][2] = peer_status = 'session'
@@ -117,16 +116,15 @@ class WebRTCSimpleServer(object):
                 print('Ignoring unknown message {!r} from {!r}'.format(msg, uid))
 
     async def hello_peer(self, ws):
-        raddr = ws.remote_address
         hello = await ws.recv()
         hello, uid = hello.split(maxsplit=1)
 
         if hello != 'HELLO':
             await ws.close(code=1002, reason='invalid protocol')
-            raise Exception("Invalid hello from {!r}".format(raddr))
+            raise Exception("Invalid hello from {!r}".format(ws.remote_address))
         if not uid or uid in self.peers or uid.split() != [uid]:  # no whitespace
             await ws.close(code=1002, reason='invalid peer uid')
-            raise Exception("Invalid uid {!r} from {!r}".format(uid, raddr))
+            raise Exception("Invalid uid {!r} from {!r}".format(uid, ws.remote_address))
         
         # Send back a HELLO
         await ws.send('HELLO')
@@ -134,13 +132,12 @@ class WebRTCSimpleServer(object):
 
     async def run(self):
         async def handler(ws, path):
-            raddr = ws.remote_address
-            print("Connected to {!r}".format(raddr))
+            print("Connected to {!r}".format(ws.remote_address))
             peer_id = await self.hello_peer(ws)
             try:
                 await self.connection_handler(ws, peer_id)
             except websockets.ConnectionClosed:
-                print("Connection to peer {!r} closed, exiting handler".format(raddr))
+                print("Connection to peer {!r} closed, exiting handler".format(ws.remote_address))
             finally:
                 await self.remove_peer(peer_id)
 

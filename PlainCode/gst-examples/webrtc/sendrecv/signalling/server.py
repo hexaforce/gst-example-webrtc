@@ -19,14 +19,10 @@ class CustomEncoder(json.JSONEncoder):
 class WebRTCSimpleServer(object):
 
     def __init__(self, options):
-        ############### Global data ###############
         self.peers = dict()
         self.sessions = dict()
 
-        # Options
         self.options = options
-
-    ############### Helper functions ###############
 
     async def health_check(self, path, request_headers):
         if path == self.options.health:

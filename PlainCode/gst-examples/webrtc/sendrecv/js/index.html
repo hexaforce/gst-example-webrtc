@@ -11,8 +11,9 @@
     <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
     <script>
       // Set this to override the automatic detection in websocketServerConnect()
-      var ws_server = 'webrtc.gstreamer.net'
-      var ws_port = 8443
+      var ws_protocol = null // use default 'ws'
+      var ws_server = null // use default '127.0.0.1'
+      var ws_port = null // use default 8443
       // Set this to use a specific peer id instead of a random one
       var default_peer_id
       // Override with your own STUN servers if you want
@@ -108,6 +109,7 @@
         if (textarea.value == '') textarea.value = JSON.stringify(default_constraints)
         // Fetch the peer id to use
         var peer_id = default_peer_id || getOurId()
+        ws_protocol = ws_protocol || 'ws'
         ws_port = ws_port || '8443'
         if (window.location.protocol.startsWith('file')) {
           ws_server = ws_server || '127.0.0.1'
@@ -116,7 +118,7 @@
         } else {
           throw new Error("Don't know how to connect to the signalling server with uri" + window.location)
         }
-        var ws_url = 'wss://' + ws_server + ':' + ws_port
+        var ws_url = ws_protocol + '://' + ws_server + ':' + ws_port
         setStatus('Connecting to server ' + ws_url)
         ws_conn = new WebSocket(ws_url)
         /* When connected, immediately register with the server */

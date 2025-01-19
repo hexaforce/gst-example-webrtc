@@ -1,12 +1,12 @@
 
 import sys
 import logging
+import http
+import json
 import asyncio
 import websockets
 import argparse
-import http
 import concurrent
-import json
 
 class WebRTCSimpleServer(object):
 

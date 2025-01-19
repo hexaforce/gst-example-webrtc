@@ -1,14 +1,12 @@
 
-import os
 import sys
-import ssl
 import logging
 import asyncio
 import websockets
 import argparse
 import http
 import concurrent
-
+import json
 
 class WebRTCSimpleServer(object):
 
@@ -82,9 +80,20 @@ class WebRTCSimpleServer(object):
                     other_id = self.sessions[uid]
                     wso, _, status = self.peers[other_id]
                     assert(status == 'session')
-                    print("{} -> {}: {}".format(uid, other_id, msg))
-                    await wso.send(msg)
 
+                    try:
+                        parsed_msg = json.loads(msg)
+                    except json.JSONDecodeError:
+                        print(f"{uid} -> {other_id}: {msg}")
+                        return
+                    if "sdp" in parsed_msg:
+                        type = parsed_msg["sdp"].get("type", "")
+                        print(f"{uid} -> {other_id}: SDP Message: {type}")
+                        sdp = parsed_msg["sdp"].get("sdp", "")
+                        print("\n".join(sdp.split("\\r\\n")))
+                    else:
+                        print(f"{uid} -> {other_id}: {msg}")
+                    await wso.send(msg)
                 else:
                     raise AssertionError('Unknown peer status {!r}'.format(peer_status))
 

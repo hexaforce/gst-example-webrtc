@@ -48,14 +48,14 @@ class WebRTCSimpleServer(object):
                 # If there was a session with this peer, also close the connection to reset its state.
                 if other_id in self.peers:
                     print("Closing connection to {}".format(other_id))
-                    wso, oaddr, _ = self.peers[other_id]
+                    wso, _, _ = self.peers[other_id]
                     del self.peers[other_id]
                     await wso.close()
 
     async def remove_peer(self, uid):
         await self.cleanup_session(uid)
         if uid in self.peers:
-            ws, remote_address, status = self.peers[uid]
+            ws, remote_address, _ = self.peers[uid]
             del self.peers[uid]
             await ws.close()
             print("Disconnected from peer {!r} at {!r}".format(uid, remote_address))
@@ -80,7 +80,7 @@ class WebRTCSimpleServer(object):
                 # We're in a session, route message to connected peer
                 if peer_status == 'session':
                     other_id = self.sessions[uid]
-                    wso, oaddr, status = self.peers[other_id]
+                    wso, _, status = self.peers[other_id]
                     assert(status == 'session')
                     print("{} -> {}: {}".format(uid, other_id, msg))
                     await wso.send(msg)
@@ -190,9 +190,6 @@ def main():
         r = WebRTCSimpleServer(options)
         asyncio.run(r.run())
         print('Restarting server...')
-
-    print("Goodbye!")
-
 
 if __name__ == "__main__":
     main()

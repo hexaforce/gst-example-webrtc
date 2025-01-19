@@ -1,196 +1,203 @@
-const fs = require('fs');
-const http = require('http');
-const https = require('https');
 const WebSocket = require('ws');
-const { program } = require('commander');
+const http = require('http');
+const url = require('url');
+const fs = require('fs');
 
 class WebRTCSimpleServer {
-  constructor(options) {
-    this.peers = new Map(); // {uid: {ws, address, status}}
-    this.sessions = new Map(); // {callerUid: calleeUid, calleeUid: callerUid}
-    this.rooms = new Map(); // {roomId: Set(peerIds)}
-    this.options = options;
-  }
-
-  getSSLCredentials() {
-    const chainPath = `${this.options.certPath}/fullchain.pem`;
-    const keyPath = `${this.options.certPath}/privkey.pem`;
-    return {
-      cert: fs.readFileSync(chainPath),
-      key: fs.readFileSync(keyPath),
-    };
-  }
-
-  createServer() {
-    if (this.options.disableSsl) {
-      return http.createServer();
+    constructor(options) {
+        this.peers = {}; // Connected peers
+        this.sessions = {}; // Active sessions
+        this.options = options;
     }
-    const sslCredentials = this.getSSLCredentials();
-    return https.createServer(sslCredentials);
-  }
 
-  async handleConnection(ws, req) {
-    const address = req.socket.remoteAddress;
-    console.log(`New connection from ${address}`);
-    try {
-      const uid = await this.exchangeHello(ws);
-      this.peers.set(uid, { ws, address, status: null });
+    // Helper functions
 
-      ws.on('message', (message) => this.handleMessage(ws, uid, message.toString()));
-      ws.on('close', () => this.removePeer(uid));
-    } catch (error) {
-      console.error('Connection error:', error.message);
-      ws.close();
-    }
-  }
-
-  async exchangeHello(ws) {
-    return new Promise((resolve, reject) => {
-      ws.once('message', (message) => {
-        const parts = message.toString().split(' ');
-        if (parts[0] !== 'HELLO' || parts.length !== 2) {
-          reject(new Error('Invalid HELLO message'));
-          return;
+    async healthCheck(path) {
+        if (path === this.options.health) {
+            return { status: 200, body: 'OK\n' };
         }
-        const uid = parts[1];
-        if (this.peers.has(uid)) {
-          reject(new Error('UID already in use'));
-          return;
+        return null;
+    }
+
+    async recvMsgPing(ws, raddr) {
+        let msg = null;
+        while (msg === null) {
+            try {
+                msg = await new Promise((resolve, reject) => {
+                    ws.once('message', resolve);
+                    setTimeout(() => reject(new Error('Timeout')), this.options.keepalive_timeout * 1000);
+                });
+            } catch (err) {
+                console.log(`Sending keepalive ping to ${raddr}`);
+                ws.ping();
+            }
         }
-        ws.send('HELLO');
-        resolve(uid);
-      });
-    });
-  }
-
-  handleMessage(ws, uid, message) {
-    console.log(`Received message from ${uid}: ${message}`);
-    const peerData = this.peers.get(uid);
-
-    if (!peerData) {
-      ws.send('ERROR: Unknown peer');
-      return;
+        return msg;
     }
 
-    // Handle commands like 'SESSION', 'ROOM', etc.
-    const [command, ...args] = message.split(' ');
+    async cleanupSession(uid) {
+        if (this.sessions[uid]) {
+            const otherId = this.sessions[uid];
+            delete this.sessions[uid];
+            console.log(`Cleaned up ${uid} session`);
 
-    switch (command) {
-      case 'SESSION':
-        this.handleSessionCommand(uid, args);
-        break;
-      case 'ROOM':
-        this.handleRoomCommand(uid, args);
-        break;
-      default:
-        ws.send(`ERROR: Unknown command '${command}'`);
-    }
-  }
-
-  handleSessionCommand(uid, args) {
-    if (args.length !== 1) {
-      this.peers.get(uid).ws.send('ERROR: Invalid SESSION command');
-      return;
-    }
-    const calleeId = args[0];
-    if (!this.peers.has(calleeId)) {
-      this.peers.get(uid).ws.send(`ERROR: Peer ${calleeId} not found`);
-      return;
-    }
-    if (this.sessions.has(uid) || this.sessions.has(calleeId)) {
-      this.peers.get(uid).ws.send('ERROR: Already in a session');
-      return;
+            if (this.sessions[otherId]) {
+                delete this.sessions[otherId];
+                console.log(`Also cleaned up ${otherId} session`);
+                if (this.peers[otherId]) {
+                    console.log(`Closing connection to ${otherId}`);
+                    const [ws] = this.peers[otherId];
+                    delete this.peers[otherId];
+                    ws.close();
+                }
+            }
+        }
     }
 
-    this.sessions.set(uid, calleeId);
-    this.sessions.set(calleeId, uid);
-    this.peers.get(uid).status = 'session';
-    this.peers.get(calleeId).status = 'session';
-
-    this.peers.get(uid).ws.send('SESSION_OK');
-    console.log(`Session established between ${uid} and ${calleeId}`);
-  }
-
-  handleRoomCommand(uid, args) {
-    if (args.length !== 1) {
-      this.peers.get(uid).ws.send('ERROR: Invalid ROOM command');
-      return;
-    }
-    const roomId = args[0];
-
-    if (!this.rooms.has(roomId)) {
-      this.rooms.set(roomId, new Set());
-    }
-    const room = this.rooms.get(roomId);
-    if (room.has(uid)) {
-      this.peers.get(uid).ws.send('ERROR: Already in the room');
-      return;
+    async removePeer(uid) {
+        await this.cleanupSession(uid);
+        if (this.peers[uid]) {
+            const [ws, raddr] = this.peers[uid];
+            delete this.peers[uid];
+            ws.close();
+            console.log(`Disconnected from peer ${uid} at ${raddr}`);
+        }
     }
 
-    room.add(uid);
-    this.peers.get(uid).status = roomId;
+    // Handler functions
 
-    const peersInRoom = Array.from(room).filter((peerId) => peerId !== uid);
-    this.peers.get(uid).ws.send(`ROOM_OK ${peersInRoom.join(' ')}`);
+    async connectionHandler(ws, uid) {
+        const raddr = ws._socket.remoteAddress;
+        let peerStatus = null;
+        this.peers[uid] = [ws, raddr, peerStatus];
+        console.log(`Registered peer ${uid} at ${raddr}`);
 
-    peersInRoom.forEach((peerId) => {
-      const peer = this.peers.get(peerId);
-      if (peer) {
-        peer.ws.send(`ROOM_PEER_JOINED ${uid}`);
-      }
-    });
+        while (true) {
+            const msg = await this.recvMsgPing(ws, raddr);
 
-    console.log(`Peer ${uid} joined room ${roomId}`);
-  }
+            peerStatus = this.peers[uid][2];
 
-  async removePeer(uid) {
-    if (!this.peers.has(uid)) return;
-    const { status } = this.peers.get(uid);
+            if (peerStatus !== null) {
+                if (peerStatus === 'session') {
+                    const otherId = this.sessions[uid];
+                    const [wso] = this.peers[otherId];
+                    console.log(`${uid} -> ${otherId}: ${msg}`);
+                    wso.send(msg);
+                } else {
+                    throw new Error(`Unknown peer status ${peerStatus}`);
+                }
+            } else if (msg.startsWith('SESSION')) {
+                const [cmd, calleeId] = msg.split(' ');
 
-    if (status === 'session') {
-      const calleeId = this.sessions.get(uid);
-      if (calleeId && this.peers.has(calleeId)) {
-        this.peers.get(calleeId).ws.send('ERROR: Session ended');
-        this.peers.get(calleeId).status = null;
-      }
-      this.sessions.delete(uid);
-      this.sessions.delete(calleeId);
-    } else if (status) {
-      const room = this.rooms.get(status);
-      if (room) {
-        room.delete(uid);
-        room.forEach((peerId) => {
-          this.peers.get(peerId)?.ws.send(`ROOM_PEER_LEFT ${uid}`);
+                if (!(calleeId in this.peers)) {
+                    ws.send(`ERROR peer ${calleeId} not found`);
+                    continue;
+                }
+
+                if (peerStatus !== null) {
+                    ws.send('ERROR you are already in a session');
+                    continue;
+                }
+
+                const calleeStatus = this.peers[calleeId][2];
+                if (calleeStatus !== null) {
+                    ws.send(`ERROR peer ${calleeId} busy`);
+                    continue;
+                }
+
+                ws.send('SESSION_OK');
+                const wsc = this.peers[calleeId][0];
+                console.log(`Session from ${uid} to ${calleeId}`);
+                
+                this.peers[uid][2] = 'session';
+                this.sessions[uid] = calleeId;
+                this.peers[calleeId][2] = 'session';
+                this.sessions[calleeId] = uid;
+            } else {
+                console.log(`Ignoring unknown message ${msg} from ${uid}`);
+            }
+        }
+    }
+
+    async helloPeer(ws) {
+        const raddr = ws._socket.remoteAddress;
+        const hello = await new Promise((resolve, reject) => {
+            ws.once('message', resolve);
+            setTimeout(() => reject(new Error('Timeout')), 5000);
         });
-      }
+
+        const [cmd, uid] = hello.split(' ');
+
+        if (cmd !== 'HELLO') {
+            ws.close(1002, 'invalid protocol');
+            throw new Error(`Invalid hello from ${raddr}`);
+        }
+
+        if (!uid || uid in this.peers || uid.includes(' ')) {
+            ws.close(1002, 'invalid peer uid');
+            throw new Error(`Invalid uid ${uid} from ${raddr}`);
+        }
+
+        ws.send('HELLO');
+        return uid;
     }
 
-    this.peers.delete(uid);
-    console.log(`Peer ${uid} disconnected`);
-  }
+    async run() {
+        const server = http.createServer((req, res) => {
+            const { path } = url.parse(req.url, true);
+            const healthResponse = this.healthCheck(path);
+            if (healthResponse) {
+                res.statusCode = healthResponse.status;
+                res.end(healthResponse.body);
+            } else {
+                res.statusCode = 404;
+                res.end('Not Found');
+            }
+        });
 
-  run() {
-    const server = this.createServer();
-    const wss = new WebSocket.Server({ server });
+        const wss = new WebSocket.Server({ server });
 
-    wss.on('connection', (ws, req) => this.handleConnection(ws, req));
+        wss.on('connection', (ws) => {
+            ws.on('message', async (message) => {
+              console.log(message)
+                try {
+                    const peerId = await this.helloPeer(ws);
+                    await this.connectionHandler(ws, peerId);
+                } catch (err) {
+                    console.error(`Connection handler error: ${err.message}`);
+                }
+            });
+        });
 
-    server.listen(this.options.port, this.options.addr, () => {
-      console.log(`WebRTC Simple Server running at ${this.options.addr}:${this.options.port}`);
-    });
-  }
+        console.log(`Listening on http://${this.options.addr}:${this.options.port}`);
+
+        server.listen(this.options.port, this.options.addr, () => {
+            console.log('Server is running...');
+        });
+    }
+
+    stop() {
+        if (this.exitFuture) {
+            console.log('Stopping server...');
+            this.exitFuture = null;
+        }
+    }
 }
 
-program
-  .option('--addr <address>', 'Address to listen on', '0.0.0.0')
-  .option('--port <port>', 'Port to listen on', 8443)
-  .option('--keepalive-timeout <timeout>', 'Keepalive timeout in seconds', 30)
-  .option('--cert-path <path>', 'Path to SSL certificates', './certs')
-  .option('--disable-ssl', 'Disable SSL', true)
-  .option('--health <path>', 'Health check path', '/health');
+function main() {
+    const args = process.argv.slice(2);
+    const options = {
+        addr: '0.0.0.0',
+        port: 8443,
+        keepalive_timeout: 30,
+        health: '/health'
+    };
 
-program.parse(process.argv);
+    const server = new WebRTCSimpleServer(options);
 
-const options = program.opts();
-const server = new WebRTCSimpleServer(options);
-server.run();
+    server.run().catch(console.error);
+}
+
+if (require.main === module) {
+    main();
+}

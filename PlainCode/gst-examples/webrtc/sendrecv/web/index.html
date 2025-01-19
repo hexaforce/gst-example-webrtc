@@ -232,9 +232,8 @@
         })
       }
 
-      const handleDataChannelOpen = (event) => {
-        console.log('dataChannel.OnOpen', event)
-      }
+      const handleDataChannelOpen = (event) => console.log('dataChannel.OnOpen', event)
+     
 
       const handleDataChannelMessageReceived = (event) => {
         console.log('dataChannel.OnMessage:', event, event.data.type)
@@ -250,13 +249,11 @@
         send_channel.send('Hi! (from browser)')
       }
 
-      const handleDataChannelError = (error) => {
-        console.log('dataChannel.OnError:', error)
-      }
+      const handleDataChannelError = (error) => console.log('dataChannel.OnError:', error)
+      
 
-      const handleDataChannelClose = (event) => {
-        console.log('dataChannel.OnClose', event)
-      }
+      const handleDataChannelClose = (event) => console.log('dataChannel.OnClose', event)
+      
 
       function onDataChannel(event) {
         setStatus('Data channel created')

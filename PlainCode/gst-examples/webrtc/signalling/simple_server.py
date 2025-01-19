@@ -36,13 +36,7 @@ class WebRTCSimpleServer(object):
         self.rooms = dict()
 
         # Options
-        self.addr = options.addr
-        self.port = options.port
-        self.keepalive_timeout = options.keepalive_timeout
-        self.cert_restart = options.cert_restart
-        self.cert_path = options.cert_path
-        self.disable_ssl = options.disable_ssl
-        self.health_path = options.health
+        self.options = options
 
         # Certificate mtime, used to detect when to restart the server
         self.cert_mtime = -1
@@ -50,7 +44,7 @@ class WebRTCSimpleServer(object):
     ############### Helper functions ###############
 
     async def health_check(self, path, request_headers):
-        if path == self.health_path:
+        if path == self.options.health_path:
             return http.HTTPStatus.OK, [], b"OK\n"
         return None
 
@@ -62,7 +56,7 @@ class WebRTCSimpleServer(object):
         msg = None
         while msg is None:
             try:
-                msg = await asyncio.wait_for(ws.recv(), self.keepalive_timeout)
+                msg = await asyncio.wait_for(ws.recv(), self.options.keepalive_timeout)
             except (asyncio.TimeoutError, concurrent.futures._base.TimeoutError):
                 print('Sending keepalive ping to {!r} in recv'.format(raddr))
                 await ws.ping()
@@ -227,19 +221,19 @@ class WebRTCSimpleServer(object):
         return uid
 
     def get_ssl_certs(self):
-        if 'letsencrypt' in self.cert_path:
-            chain_pem = os.path.join(self.cert_path, 'fullchain.pem')
-            key_pem = os.path.join(self.cert_path, 'privkey.pem')
+        if 'letsencrypt' in self.options.cert_path:
+            chain_pem = os.path.join(self.options.cert_path, 'fullchain.pem')
+            key_pem = os.path.join(self.options.cert_path, 'privkey.pem')
         else:
-            chain_pem = os.path.join(self.cert_path, 'cert.pem')
-            key_pem = os.path.join(self.cert_path, 'key.pem')
+            chain_pem = os.path.join(self.options.cert_path, 'cert.pem')
+            key_pem = os.path.join(self.options.cert_path, 'key.pem')
         return chain_pem, key_pem
 
     def get_ssl_ctx(self):
-        if self.disable_ssl:
+        if self.options.disable_ssl:
             return None
         # Create an SSL context to be used by the websocket server
-        print('Using TLS with keys in {!r}'.format(self.cert_path))
+        print('Using TLS with keys in {!r}'.format(self.options.cert_path))
         chain_pem, key_pem = self.get_ssl_certs()
         sslctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         try:
@@ -269,9 +263,9 @@ class WebRTCSimpleServer(object):
 
         sslctx = self.get_ssl_ctx()
 
-        print("Listening on https://{}:{}".format(self.addr, self.port))
+        print("Listening on https://{}:{}".format(self.options.addr, self.options.port))
         # Websocket server
-        wsd = websockets.serve(handler, self.addr, self.port, ssl=sslctx, process_request=self.health_check if self.health_path else None,
+        wsd = websockets.serve(handler, self.options.addr, self.options.port, ssl=sslctx, process_request=self.options.health_check if self.options.health_path else None,
                                # Maximum number of messages that websockets will pop
                                # off the asyncio and OS buffers per connection. See:
                                # https://websockets.readthedocs.io/en/stable/api.html#websockets.protocol.WebSocketCommonProtocol
@@ -315,7 +309,7 @@ class WebRTCSimpleServer(object):
 
     async def check_server_needs_restart(self):
         "When the certificate changes, we need to restart the server"
-        if not self.cert_restart:
+        if not self.options.cert_restart:
             return
         while True:
             await asyncio.sleep(10)

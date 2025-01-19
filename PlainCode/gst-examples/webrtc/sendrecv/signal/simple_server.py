@@ -132,8 +132,10 @@ class WebRTCSimpleServer(object):
                 try:
                     print("Peers:")
                     print(json.dumps(self.peers, cls=CustomEncoder, indent=4))
-                    print("\nSessions:")
+                    print("\n")
+                    print("Sessions:")
                     print(json.dumps(self.sessions, cls=CustomEncoder, indent=4))
+                    print("\n")
                 except Exception as e:
                     print(f"Error during JSON dump: {e}")
 

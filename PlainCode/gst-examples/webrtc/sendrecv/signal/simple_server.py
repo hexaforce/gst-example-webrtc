@@ -8,6 +8,14 @@ import websockets
 import argparse
 import concurrent
 
+
+class CustomEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if hasattr(obj, "__str__"):
+            return str(obj)
+        return super().default(obj)
+
+
 class WebRTCSimpleServer(object):
 
     def __init__(self, options):
@@ -120,6 +128,14 @@ class WebRTCSimpleServer(object):
                 self.sessions[uid] = callee_id
                 self.peers[callee_id][2] = 'session'
                 self.sessions[callee_id] = uid
+
+                try:
+                    print("Peers:")
+                    print(json.dumps(self.peers, cls=CustomEncoder, indent=4))
+                    print("\nSessions:")
+                    print(json.dumps(self.sessions, cls=CustomEncoder, indent=4))
+                except Exception as e:
+                    print(f"Error during JSON dump: {e}")
 
             else:
                 print('Ignoring unknown message {!r} from {!r}'.format(msg, uid))

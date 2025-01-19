@@ -152,14 +152,12 @@
                 var msg = JSON.parse(event.data)
 
                 // Incoming JSON signals the beginning of a call
-                if (!callCreateTriggered) createCall(msg)
+                if (!callCreateTriggered) createCall()
 
                 if (msg.sdp != null) {
-                  // onIncomingSDP(msg.sdp);
                   try {
                     // An offer may come in while we are busy processing SRD(answer).
-                    // In this case, we will be in "stable" by the time the offer is processed
-                    // so it is safe to chain it on our Operations Chain now.
+                    // In this case, we will be in "stable" by the time the offer is processed so it is safe to chain it on our Operations Chain now.
                     const readyForOffer = !makingOffer && (peer_connection.signalingState == 'stable' || isSettingRemoteAnswerPending)
                     const offerCollision = msg.sdp.type == 'offer' && !readyForOffer
 
@@ -188,9 +186,7 @@
                     handleIncomingError(err)
                   }
                 } else if (msg.ice != null) {
-                  // onIncomingICE(msg.ice);
-                  var candidate = new RTCIceCandidate(msg.ice)
-                  peer_connection.addIceCandidate(candidate).catch(setError)
+                  peer_connection.addIceCandidate(new RTCIceCandidate(msg.ice)).catch(setError)
                 } else {
                   handleIncomingError('Unknown incoming JSON: ' + msg)
                 }
@@ -234,7 +230,6 @@
 
       const handleDataChannelMessageReceived = (event) => {
         console.log('dataChannel.OnMessage:', event, event.data.type)
-
         setStatus('Received data channel message')
         if (typeof event.data === 'string' || event.data instanceof String) {
           console.log('Incoming string message: ' + event.data)
@@ -246,15 +241,6 @@
         send_channel.send('Hi! (from browser)')
       }
 
-      function onDataChannel(event) {
-        setStatus('Data channel created')
-        let receiveChannel = event.channel
-        receiveChannel.onopen = (event) => console.log('dataChannel.OnOpen', event)
-        receiveChannel.onmessage = handleDataChannelMessageReceived
-        receiveChannel.onerror = (error) => console.log('dataChannel.OnError:', error)
-        receiveChannel.onclose = (event) => console.log('dataChannel.OnClose', event)
-      }
-
       async function createCall() {
         callCreateTriggered = true
         console.log('Configuring RTCPeerConnection')
@@ -263,12 +249,17 @@
         send_channel.onmessage = handleDataChannelMessageReceived
         send_channel.onerror = (error) => console.log('dataChannel.OnError:', error)
         send_channel.onclose = (event) => console.log('dataChannel.OnClose', event)
-        peer_connection.ondatachannel = onDataChannel
+        peer_connection.ondatachannel = function onDataChannel(event) {
+          setStatus('Data channel created')
+          let receiveChannel = event.channel
+          receiveChannel.onopen = (event) => console.log('dataChannel.OnOpen', event)
+          receiveChannel.onmessage = handleDataChannelMessageReceived
+          receiveChannel.onerror = (error) => console.log('dataChannel.OnError:', error)
+          receiveChannel.onclose = (event) => console.log('dataChannel.OnClose', event)
+        }
 
         peer_connection.ontrack = ({ streams }) => {
           console.log('ontrack triggered')
-
-          // var videoElem = getVideoElement();
           var div = $('video')
           var videoElem = document.createElement('video')
           videoElem.textContent = "Your browser doesn't support video"
@@ -294,8 +285,7 @@
         }
 
         peer_connection.onicecandidate = (event) => {
-          // We have a candidate, send it to the remote party with the
-          // same uuid
+          // We have a candidate, send it to the remote party with the same uuid
           if (event.candidate == null) {
             console.log('ICE Candidate was null, done')
             return
@@ -348,7 +338,6 @@
             }
             return stream
           } else {
-            // errorUserMediaHandler();
             setError("Browser doesn't support getUserMedia!")
           }
         }
